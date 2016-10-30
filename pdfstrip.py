@@ -34,35 +34,20 @@ logger.addHandler(console_handler)
 logger.propagate = False
 
 
-def resolve_objects_names(pdf, objects_ids):
-    logger.debug("objects_ids %s", objects_ids)
-    objects_names = []
-    for objnum in objects_ids:
-        indirect_object = pdf.findindirect(objnum, 0)
-        if isinstance(indirect_object, PdfIndirect):
-            try:
-                real_object = indirect_object.real_value()
-                if real_object.Name:
-                    objects_names.append(real_object.Name)
-                else:
-                    logger.warning("Object %d has an empty 'Name' attribute", objnum)
-            except AttributeError:
-                logger.warning("Object %d has no 'Name' attribute", objnum)
-        else:
-            logger.warning("Object %d is not a PdfIndirect but a %s",
-                           objnum, type(indirect_object))
-
-    logger.debug("objects_names %s\n", objects_names)
-    return objects_names
-
-
-def strip_objects(pdf, objects_names):
+def strip_objects(pdf, objects_ids):
     for i, page in enumerate(pdf.pages):
         logger.debug("Page %d", i + 1)
+
+        # Map all the objects in the page using the objects id as the key and
+        # the resource name as the value.
+        name_map = {indirect_obj.indirect[0]: name for name, indirect_obj in page.Resources.XObject.items()}
+        logger.debug("name_map: %s", name_map)
+
         logger.debug("Before %s", page.Resources.XObject.keys())
-        for obj in objects_names:
-            if obj in page.Resources.XObject:
-                del page.Resources.XObject[obj]
+
+        for obj in objects_ids:
+            if obj in name_map:
+                del page.Resources.XObject[name_map[obj]]
 
         logger.debug("After  %s\n", page.Resources.XObject.keys())
 
@@ -97,8 +82,7 @@ def main():
 
     pdf_data = PdfReader(args.input_filename)
 
-    objects_names = resolve_objects_names(pdf_data, args.objects_ids)
-    pdf_data = strip_objects(pdf_data, objects_names)
+    pdf_data = strip_objects(pdf_data, args.objects_ids)
 
     PdfWriter().write(args.output_filename, pdf_data)
 
