@@ -38,6 +38,10 @@ def strip_objects(pdf, objects_ids):
     for i, page in enumerate(pdf.pages):
         logger.debug("Page %d", i + 1)
 
+        # skip empty pages
+        if not page.Resources.XObject:
+            continue
+
         # Map all the objects in the page using the objects id as the key and
         # the resource name as the value.
         name_map = {indirect_obj.indirect[0]: name for name, indirect_obj in page.Resources.XObject.items()}
