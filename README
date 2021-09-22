@@ -11,7 +11,7 @@ Example of use:
 
       1. List all the images:
 
-          $ pdfimages -list uncompressed.pdf > pdfimages.txt
+          $ pdfimages -list -all uncompressed.pdf > pdfimages.txt
 
       2. Extract all the images:
 
